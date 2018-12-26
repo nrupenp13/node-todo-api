@@ -1,3 +1,5 @@
+// https://guarded-beyond-70962.herokuapp.com/todos
+
 var express = require('express');
 var bodyParser = require('body-parser');
 
@@ -54,9 +56,30 @@ app.get('/todos/:id', function(req, res){
       res.send(400).send();
     });
   }
-
-
 });
+
+// DELETE by id
+
+app.delete('/todos/:id', function(req, res){
+  var id = req.params.id;
+  if(!ObjectID.isValid(id))
+  {
+    return res.status(400).send();
+  }
+  Todo.findByIdAndRemove(id).then((todo)=> {
+    if(!todo){
+      res.status(404).send()
+    }
+    else
+    {
+      res.send(todo);
+    }
+  }).catch((e)=>{
+    res.status(400).send();
+  });
+});
+
+
 
 app.listen(port, () => {
   console.log(`Started up at port ${port}`);
