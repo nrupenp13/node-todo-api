@@ -1,7 +1,8 @@
 // https://guarded-beyond-70962.herokuapp.com/todos
 
-var express = require('express');
-var bodyParser = require('body-parser');
+const express = require('express');
+const bodyParser = require('body-parser');
+const _ = require('lodash');
 
 var {mongoose} = require('./DB/mongoose');
 var {Todo} = require('./models/todo');
@@ -15,6 +16,7 @@ const port = process.env.PORT || 3000 ;
 
 app.use(bodyParser.json());
 
+// Creat todo
 app.post('/todos', (req, res) => {
   var todo = new Todo({
     text: req.body.text
@@ -27,6 +29,7 @@ app.post('/todos', (req, res) => {
   });
 });
 
+// GET ALL todos
 app.get('/todos', (req, res) => {
   Todo.find().then((todos) => {
     res.send({todos});
@@ -36,7 +39,6 @@ app.get('/todos', (req, res) => {
 });
 
 // GET /todos/<id>
-
 app.get('/todos/:id', function(req, res){
   var id = req.params.id;
   if(!ObjectID.isValid(id))
@@ -59,7 +61,6 @@ app.get('/todos/:id', function(req, res){
 });
 
 // DELETE by id
-
 app.delete('/todos/:id', function(req, res){
   var id = req.params.id;
   if(!ObjectID.isValid(id))
@@ -80,6 +81,33 @@ app.delete('/todos/:id', function(req, res){
 });
 
 
+// UPDATE
+
+app.patch('/todos/:id', (req, res)=> {
+  var id = req.params.id;
+  var body = _.pick(req.body, ['text', 'completed']);
+  if(!ObjectID.isValid(id))
+  {
+    return res.status(400).send();
+  }
+  if(_.isBoolean(body.completed) && body.completed){
+    body.completedAt = new Date().getTime();
+
+  }
+  else{
+    body.completed = false;
+    body.completedAt = null;
+  }
+
+  Todo.findByIdAndUpdate(id, {$set: body}, {new:true}).then((todo)=>{
+    if(!todo){
+      return res.status(404).send();
+    }
+    res.send({todo});
+  }).catch((e)=>{
+    res.status(400).send(e);
+  });
+});
 
 app.listen(port, () => {
   console.log(`Started up at port ${port}`);
