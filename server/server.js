@@ -1,42 +1,65 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 
-
-
-var {mongoose} = require('./DB/mongoose');
+var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 
+var {ObjectID} = require('mongodb');
+
 var app = express();
+
+const port = process.env.PORT || 3000 ;
+
 app.use(bodyParser.json());
 
-app.post('/todos', (req, res) =>{
+app.post('/todos', (req, res) => {
   var todo = new Todo({
     text: req.body.text
   });
-  todo.save().then((doc)=> {
-    res.status(201).send(doc);
-  }, (e)=>{
-   res.status(400).send(e);
+
+  todo.save().then((doc) => {
+    res.send(doc);
+  }, (e) => {
+    res.status(400).send(e);
   });
 });
 
-
-// the below is the response you get for the above request
-/*
-{
-    "__v": 0,
-    "text": "This is from Postman",
-    "_id": "5c22973e7e9809a543cec684",
-    "completedAt": null,
-    "completed": false
-}
-*/
-
-
-
-// GET METHOD /todos
-app.listen(3000, ()=>{
-
-  console.log('Started on port 3000');
+app.get('/todos', (req, res) => {
+  Todo.find().then((todos) => {
+    res.send({todos});
+  }, (e) => {
+    res.status(400).send(e);
+  });
 });
+
+// GET /todos/<id>
+
+app.get('/todos/:id', function(req, res){
+  var id = req.params.id;
+  if(!ObjectID.isValid(id))
+  {
+    return res.status(400).send();
+  }
+  else
+  {
+    Todo.findById(id).then(function(todo){
+      if(!todo){
+        res.status(404).send();
+      }
+      else {
+        res.send({todo});
+      }
+    }).catch(function(e){
+      res.send(400).send();
+    });
+  }
+
+
+});
+
+app.listen(port, () => {
+  console.log(`Started up at port ${port}`);
+});
+
+module.exports = {app};
