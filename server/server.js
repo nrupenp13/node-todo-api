@@ -101,12 +101,16 @@ app.patch('/todos/:id', (req, res) => {
 // POST /users
 app.post('/users', (req, res) => {
   var body = _.pick(req.body, ['email', 'password']);
+  console.log(body);
   var user = new User(body);
-  user.save().then(() => {
+  user.save()
+  .then(() => {
    return user.generateAuthToken();
-  }).then((token)=>{
-    res.header('x-auth', token).send(user);
-  }).catch((e) => {
+  })
+  .then((token)=>{
+    res.header('x-auth', token).send(user);  // way to send the header back with the user
+  })
+  .catch((e) => {
     res.status(400).send(e);
   })
 });
@@ -114,8 +118,24 @@ app.post('/users', (req, res) => {
 
 
 app.get('/users/me', authenticate ,(req, res)=>{
+    debugger;
     res.send(req.user);
 });
+
+// POST /users/login {email, password}
+
+app.post('/users/login', (req, res) => {
+  var body = _.pick(req.body, ['email', 'password']);
+  console.log(body);
+  User.findByCredentials(body.email, body.password).then((user)=>{
+   user.generateAuthToken().then((token)=>{
+     res.header('x-auth', token).send(user);
+   });
+  }).catch((e)=>{
+    res.status(400).send();
+  });
+});
+
 
 app.listen(port, () => {
   console.log(`Started up at port ${port}`);
